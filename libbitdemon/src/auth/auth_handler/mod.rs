@@ -1,11 +1,14 @@
-﻿use crate::auth::response::AuthResponse;
+﻿use crate::auth::auth3_server::Auth3Response;
+use crate::auth::{auth3_server::Auth3Request, response::AuthResponse};
+use crate::domain::title::Title;
 use crate::messaging::bd_message::BdMessage;
 use crate::networking::bd_session::BdSession;
 use num_derive::{FromPrimitive, ToPrimitive};
 use num_traits::{FromPrimitive, ToPrimitive};
 use std::error::Error;
+use serde_repr::{Serialize_repr, Deserialize_repr};
 
-#[derive(Debug, Eq, PartialEq, Hash, Copy, Clone, FromPrimitive, ToPrimitive)]
+#[derive(Debug, Eq, PartialEq, Hash, Copy, Clone, FromPrimitive, ToPrimitive, Serialize_repr, Deserialize_repr)]
 #[repr(u8)]
 pub enum AuthMessageType {
     CreateAccountRequest = 0x0,
@@ -71,6 +74,12 @@ pub trait AuthHandler {
         session: &mut BdSession,
         message: BdMessage,
     ) -> Result<Box<dyn AuthResponse>, Box<dyn Error>>;
+
+    fn handle_auth3_message(
+        &self,
+        title: Title,
+        task: Auth3Request,
+    ) -> Result<Auth3Response, Box<dyn Error>>;
 }
 
 mod authentication_request;

@@ -3,10 +3,12 @@
 };
 use crate::auth::auth_handler::{AuthHandler, AuthMessageType};
 use crate::auth::auth_proof::ClientOpaqueAuthProof;
+use crate::auth::auth3_server::{Auth3Request, Auth3Response};
 use crate::auth::key_store::ThreadSafeBackendPrivateKeyStorage;
 use crate::auth::response::AuthResponse;
 use crate::auth::result::auth_ticket::{AuthTicket, BdAuthTicketType};
 use crate::crypto::{encrypt_buffer_in_place, generate_iv_from_seed, generate_iv_seed};
+use crate::domain::title::Title;
 use crate::messaging::bd_message::BdMessage;
 use crate::messaging::bd_serialization::{BdDeserialize, BdSerialize};
 use crate::messaging::bd_writer::BdWriter;
@@ -119,5 +121,13 @@ impl AuthHandler for SteamAuthHandler {
             ticket,
             serialized_proof_data,
         }))
+    }
+
+    fn handle_auth3_message(
+        &self,
+        _title: Title,
+        _task: Auth3Request,
+    ) -> Result<Auth3Response, Box<dyn Error>> {
+        todo!()
     }
 }

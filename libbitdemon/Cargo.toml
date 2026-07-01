@@ -22,3 +22,15 @@ num-derive.workspace = true
 num-traits.workspace = true
 rand.workspace = true
 snafu.workspace = true
+hyper-rustls = "0.27.9"
+rustls = "0.23.40"
+hyper-util = { version = "0.1.20", default-features = false, features = ["client-legacy", "tokio"] }
+tokio-rustls = "0.26.4"
+hyper = "1.10.1"
+tokio = "1.52.3"
+serde = "1.0.228"
+serde-aux = "4.7.0"
+axum-server = "0.8.0"
+serde_repr = "0.1.20"
+base64 = "0.22.1"
+serde_json = "1.0.150"

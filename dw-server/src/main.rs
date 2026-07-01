@@ -5,12 +5,18 @@ mod log;
 use crate::config::DwServerConfig;
 use crate::lobby::configure_lobby_server;
 use crate::log::{initialize_log, log_session_id};
+use axum::{Json, Router};
+use axum::response::IntoResponse;
+use axum::routing::post;
+use axum_server::tls_rustls::RustlsConfig;
+use bitdemon::auth::auth3_server::{Auth3MessageHandler, Auth3Request};
 use ::log::{error, info};
 use bitdemon::auth::auth_server::AuthServer;
 use bitdemon::auth::key_store::InMemoryKeyStore;
 use bitdemon::lobby::LobbyServer;
 use bitdemon::networking::bd_socket::BdSocket;
 use bitdemon::networking::session_manager::SessionManager;
+use std::net::{Ipv4Addr, SocketAddr};
 use std::process::exit;
 use std::sync::Arc;
 use tokio::fs::read_to_string;
@@ -53,6 +59,37 @@ async fn main() {
     let lobby_server = Arc::new(LobbyServer::new(key_store.clone()));
 
     let lobby_router = configure_lobby_server(&lobby_server, lobby_session_manager, &config);
+
+    if config.auth3_enabled()
+    {
+        let auth_server_clone = auth_server.clone();
+        let auth3_router = Router::new().route("/auth/", post(move |payload| auth3_post_handler(auth_server_clone, payload)));
+        if config.auth3_tls() {
+            let public_cert_path = config.auth3_public_cert_path();
+            let private_key_path = config.auth3_private_key_path();
+
+            let auth3_config = RustlsConfig::from_pem_file(public_cert_path, private_key_path)
+                .await
+                .unwrap();
+
+            let auth3_addr = SocketAddr::new(Ipv4Addr::new(0, 0, 0, 0).into(), 443);
+            tokio::task::spawn(async move {
+                axum_server::bind_rustls(auth3_addr, auth3_config)
+                    .serve(auth3_router.into_make_service())
+                    .await
+                    .unwrap()
+            });
+        }
+        else {
+            let auth3_addr = SocketAddr::new(Ipv4Addr::new(0, 0, 0, 0).into(), 80);
+            tokio::task::spawn(async move {
+                axum_server::bind(auth3_addr)
+                    .serve(auth3_router.into_make_service())
+                    .await
+                    .unwrap()
+            });
+        }
+    }
 
     let auth_join = auth_socket.run_async(auth_server);
     let lobby_join = lobby_socket.run_async(lobby_server);
