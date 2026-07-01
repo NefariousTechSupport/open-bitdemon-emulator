@@ -53,6 +53,8 @@ pub enum AuthMessageType {
     WiiUForMmpReply2 = 0x27,
     WiiUSecondaryForMmpRequest = 0x28,
     WiiUSecondaryForMmpReply = 0x29,
+    GameCentreForMmpRequest = 0x3A,
+    GameCentreForMmpReply = 0x3B,
 }
 
 impl AuthMessageType {
@@ -84,3 +86,4 @@ pub trait AuthHandler {
 
 mod authentication_request;
 pub mod steam;
+pub mod gamecentre;
