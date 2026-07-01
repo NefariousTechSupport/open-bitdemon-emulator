@@ -63,7 +63,7 @@ impl BdSerialize for AuthTicket {
         writer.write_bytes(self.session_key.as_ref())?;
 
         // Random hash stuff that is unused?
-        writer.write_bytes(&[0, 0, 0, 0])?;
+        writer.write_bytes(&[0, 0, 0, 0, 0, 0, 0])?;
         Ok(())
     }
 }
