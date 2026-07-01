@@ -130,3 +130,16 @@ async fn read_config_from_file() -> Option<DwServerConfig> {
 
     Some(config)
 }
+
+async fn auth3_post_handler(auth_server: Arc<AuthServer>, Json(payload): Json<Auth3Request>) -> impl IntoResponse {
+    let request = serde_json::to_string_pretty(&payload).unwrap();
+    println!("===Request===");
+    println!("{request}");
+    println!("=========================");
+    let response = auth_server.handle_auth3_message(payload).unwrap();
+    println!("===Response===");
+    let response_str = serde_json::to_string_pretty(&response).unwrap();
+    println!("{response_str}");
+    println!("=========================");
+    Json(response)
+}
