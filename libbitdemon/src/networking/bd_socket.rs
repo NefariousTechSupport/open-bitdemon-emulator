@@ -1,5 +1,10 @@
+use crate::auth::authentication::SessionAuthentication;
+use crate::auth::result::auth_ticket::{self, AuthTicket};
+use crate::domain::title::Title;
 use crate::messaging::StreamMode;
 use crate::messaging::bd_message::BdMessage;
+use crate::messaging::bd_reader::BdReader;
+use crate::messaging::bd_serialization::BdDeserialize;
 use crate::messaging::bd_writer::BdWriter;
 use crate::networking::bd_session::{BdSession, SessionVersion};
 use crate::networking::session_manager::SessionManager;
@@ -10,7 +15,7 @@ use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use cbc::Decryptor;
 use hmac::{Hmac, KeyInit, Mac};
 use log::{debug, error, info};
-use num_traits::ToPrimitive;
+use num_traits::{FromPrimitive, ToPrimitive};
 use rand::random;
 use sha1::{Digest, Sha1};
 use snafu::{ensure, Snafu};
@@ -31,6 +36,12 @@ enum BdSocketError {
     MessageTooLargeError { msg_size: u32 },
     #[snafu(display("The client sent an incomplete message header"))]
     IncompleteMessageHeaderError {},
+    #[snafu(display("The client sent an auth packet that had an incorrect bit buffer magic number. (magic={magic})"))]
+    InvalidBitBufferError { magic: u8 },
+    #[snafu(display("The client sent an auth packet that was not correct. (details={details})"))]
+    IncorrectAuthError { details: String },
+    #[snafu(display("The client sent an auth packet that contained an invalid title id. (title={title})"))]
+    InvalidTitleError { title: u32 },
 }
 
 pub trait BdMessageHandler {
@@ -173,6 +184,43 @@ impl BdSocket {
                             match command_type {
                                 0x82 => {
                                     let client_bit_buffer = &msg[2..2+0x8B];
+
+                                    {
+                                        // interpret client bit buffer to read auth
+                                        let mut bit_reader = BdReader::new(client_bit_buffer.to_vec());
+                                        bit_reader.set_mode(StreamMode::BitMode);
+                                        bit_reader.set_type_checked(false);
+
+                                        let bit_buffer_magic = bit_reader.read_u8()?;
+                                        ensure!(bit_buffer_magic == 7, InvalidBitBufferSnafu { magic: bit_buffer_magic });
+
+                                        // this is an assumption
+                                        let type_checked = bit_reader.read_bool()?;
+
+                                        bit_reader.set_type_checked(type_checked);
+                                        let title_id = bit_reader.read_u32()?;
+
+                                        let maybe_title_id = Title::from_u32(title_id);
+                                        ensure!(maybe_title_id.is_some(), InvalidTitleSnafu { title: title_id });
+
+                                        let _iv_seed = bit_reader.read_u32()?;
+                                        let mut server_ticket_bytes = [0u8; 0x80];
+                                        bit_reader.read_bits(&mut server_ticket_bytes, 0x400)?;
+                                        let server_ticket;
+                                        {
+                                            let mut server_ticket_reader = BdReader::new(server_ticket_bytes.to_vec());
+                                            server_ticket = AuthTicket::deserialize(&mut server_ticket_reader)?
+                                        }
+
+                                        let auth = SessionAuthentication {
+                                            session_key: server_ticket.session_key,
+                                            title: maybe_title_id.unwrap(),
+                                            user_id: server_ticket.user_id,
+                                            username: server_ticket.username
+                                        };
+                                        session.set_authentication(auth);
+                                    }
+
                                     let mut clientchalb = [0u8; 8];
                                     clientchalb.copy_from_slice(&msg[0x8D..0x95]);
                                     let received_clientchal = u64::from_le_bytes(clientchalb);
