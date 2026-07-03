@@ -104,6 +104,8 @@ impl DmlHandler {
             city: String::from("Los Angeles"),
             latitude: 34.0453f32,
             longitude: -118.2413f32,
+            asn: 8473, // copied from boiii-free repo
+            timezone: String::from("-07:00"),
         }
     }
 }

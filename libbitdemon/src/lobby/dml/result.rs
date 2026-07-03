@@ -9,6 +9,8 @@ pub struct DmlInfoResult {
     pub city: String,
     pub latitude: f32,
     pub longitude: f32,
+    pub asn: u32, // Autonomous System Number
+    pub timezone: String,
 }
 
 pub struct DmlHierarchicalInfoResult {
@@ -27,7 +29,9 @@ impl BdSerialize for DmlInfoResult {
         writer.write_str(self.city.as_str())?;
         writer.write_f32(self.latitude)?;
         writer.write_f32(self.longitude)?;
-
+        // only valid for version 210
+        writer.write_u32(self.asn)?;
+        writer.write_str(self.timezone.as_str())?;
         Ok(())
     }
 }
