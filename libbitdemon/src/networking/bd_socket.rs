@@ -326,7 +326,10 @@ impl BdSocket {
                                     let decrypted = Aes128CbcDec::new_from_slices(session.client_to_server_key(), &iv)?
                                         .decrypt_padded::<NoPadding>(&mut encrypted).unwrap();
 
-                                    debug!("Decrypted Message with size {enc_size} {hash:x?} {decrypted:x?}");
+                                    debug!("Decrypted Message with size {enc_size} {decrypted:02X?}");
+
+                                    let message = BdMessage::new(session, decrypted.to_vec())?;
+                                    message_handler.handle_message(session, message)?;
                                 }
                                 _ => {
                                     debug!("Ecountered command type {command_type} and don't know what to do");
