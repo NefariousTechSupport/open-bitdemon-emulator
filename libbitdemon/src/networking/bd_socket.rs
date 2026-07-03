@@ -177,7 +177,7 @@ impl BdSocket {
 
                         let mut msg = vec![0; header as usize];
                         session.read_exact(msg.as_mut_slice())?;
-                        debug!("Message with size {header} {msg:x?}");
+                        //debug!("Message with size {header} {msg:x?}");
 
                         if msg[0] == 0xAB {
                             let command_type = msg[1];
@@ -247,22 +247,22 @@ impl BdSocket {
                                         let _ = hash_data_writer.write_u8(0x82);
                                         let _ = hash_data_writer.write_bytes(&client_bit_buffer);
                                     }
-                                    info!("0xAB 0x82 (0/4) hash data: {hash_data:x?}");
+                                    //info!("0xAB 0x82 (0/4) hash data: {hash_data:x?}");
                                     let hmac_key = Sha1::digest(hash_data);
                                     let mut hmac_algo = HmacSha1::new_from_slice(&hmac_key).unwrap();
                                     hmac_algo.update(&[0x42; 24]); // session key
                                     let hmac_res = hmac_algo.finalize();
                                     let auth_tag = hmac_res.into_bytes();
 
-                                    info!("0xAB 0x82 (1/4) auth_tag: {auth_tag:x?}");
+                                    //info!("0xAB 0x82 (1/4) auth_tag: {auth_tag:x?}");
                                     let mut computed_clientchal = [0u8; 0x10];
                                     let mut bddata = [0u8; 0x48];
                                     Self::derive_key(&auth_tag, "CLIENTCHAL", &mut computed_clientchal);
                                     Self::derive_key(&auth_tag, "BDDATA",     &mut bddata);
 
-                                    info!("0xAB 0x82 (2/4) computed client challenge: {computed_clientchal:x?}");
-                                    info!("0xAB 0x82 (3/4) client challenge received: {received_clientchal:x?}");
-                                    info!("0xAB 0x82 (4/4) bd cryptography data:      {bddata:x?}");
+                                    //info!("0xAB 0x82 (2/4) computed client challenge: {computed_clientchal:x?}");
+                                    //info!("0xAB 0x82 (3/4) client challenge received: {received_clientchal:x?}");
+                                    //info!("0xAB 0x82 (4/4) bd cryptography data:      {bddata:x?}");
 
                                     let mut computed_clientchal_copy = [0u8; 8];
                                     computed_clientchal_copy.copy_from_slice(&computed_clientchal[0..8]);
