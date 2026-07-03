@@ -18,6 +18,7 @@ pub struct BdSession {
     authentication: Option<SessionAuthentication>,
     stream: BufReader<TcpStream>,
     client_window: u32,
+    recv: u32,
     client_random: u64,
     server_random: u64,
     client_to_server_key: [u8; 0x10],
@@ -52,6 +53,7 @@ impl BdSession {
             authentication: None,
             stream: reader,
             client_window: 0,
+            recv: 0,
             client_random: 0,
             server_random: 0,
             client_to_server_key: [0u8; 0x10],
@@ -88,6 +90,11 @@ impl BdSession {
 
     pub fn set_client_window(&mut self, client_window: u32) {
         self.client_window = client_window;
+    }
+
+    pub fn next_recv(&mut self) -> u32 {
+        self.recv += 1;
+        self.recv
     }
 
     pub fn client_random(&self) -> u64 {

@@ -88,7 +88,7 @@ impl BdResponse {
                 response_writer.write_u32(0x1E + (encrypted.len() as u32))?;
                 response_writer.write_u8(0xAB)?;
                 response_writer.write_u8(0x85)?;
-                response_writer.write_u32(1)?; // number of messages
+                response_writer.write_u32(session.next_recv())?; // recv counter, always increments
                 response_writer.write_bytes(&iv)?;
                 response_writer.write_bytes(&encrypted)?;
             }
