@@ -5,8 +5,16 @@ use std::net::{SocketAddr, TcpStream};
 
 pub type SessionId = u64;
 
+#[derive(Debug, Eq, PartialEq, Hash, Copy, Clone, FromPrimitive, ToPrimitive)]
+pub enum SessionVersion {
+    // name will be changed
+    Dw200,
+    Dw210,
+}
+
 pub struct BdSession {
     pub id: SessionId,
+    version: SessionVersion,
     authentication: Option<SessionAuthentication>,
     stream: BufReader<TcpStream>,
     client_window: u32,
@@ -38,6 +46,7 @@ impl BdSession {
 
         BdSession {
             id: 0,
+            version: SessionVersion::Dw200,
             authentication: None,
             stream: reader,
             client_window: 0,
@@ -50,6 +59,14 @@ impl BdSession {
 
     pub fn peer_addr(&self) -> io::Result<SocketAddr> {
         self.stream.get_ref().peer_addr()
+    }
+
+    pub fn version(&self) -> SessionVersion {
+        self.version
+    }
+
+    pub fn set_version(&mut self, version: SessionVersion) {
+        self.version = version;
     }
 
     pub fn authentication(&self) -> Option<&SessionAuthentication> {

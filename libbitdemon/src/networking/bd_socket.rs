@@ -1,7 +1,7 @@
 use crate::messaging::StreamMode;
 use crate::messaging::bd_message::BdMessage;
 use crate::messaging::bd_writer::BdWriter;
-use crate::networking::bd_session::BdSession;
+use crate::networking::bd_session::{BdSession, SessionVersion};
 use crate::networking::session_manager::SessionManager;
 use aes::cipher::block_padding::{NoPadding, Padding};
 use aes::{Aes128, Aes128Dec};
@@ -138,6 +138,8 @@ impl BdSocket {
                         debug!("Buffer available: {available_buffer_size}");
                     }
                     210 => {
+                        session.set_version(SessionVersion::Dw210);
+
                         let the_number_210 = session.read_u32::<LittleEndian>()?;
                         let client_window = session.read_u32::<LittleEndian>()?;
                         let client_random = session.read_u64::<LittleEndian>()?;
