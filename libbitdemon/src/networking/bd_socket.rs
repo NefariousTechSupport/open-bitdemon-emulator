@@ -8,11 +8,9 @@ use crate::messaging::bd_serialization::BdDeserialize;
 use crate::messaging::bd_writer::BdWriter;
 use crate::networking::bd_session::{BdSession, SessionVersion};
 use crate::networking::session_manager::SessionManager;
-use aes::cipher::block_padding::{NoPadding, Padding};
-use aes::{Aes128, Aes128Dec};
-use aes::cipher::{BlockCipherDecrypt, BlockModeDecrypt, KeyIvInit, SetIvState};
+use aes::cipher::block_padding::NoPadding;
+use aes::cipher::{BlockModeDecrypt, KeyIvInit};
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
-use cbc::Decryptor;
 use hmac::{Hmac, KeyInit, Mac};
 use log::{debug, error, info};
 use num_traits::{FromPrimitive, ToPrimitive};
@@ -42,6 +40,8 @@ enum BdSocketError {
     IncorrectAuthError { details: String },
     #[snafu(display("The client sent an auth packet that contained an invalid title id. (title={title})"))]
     InvalidTitleError { title: u32 },
+    #[snafu(display("The client sent an auth packet with an invalid hmac hash."))]
+    InvalidHmacError {  },
 }
 
 pub trait BdMessageHandler {
@@ -268,12 +268,16 @@ impl BdSocket {
                                     computed_clientchal_copy.copy_from_slice(&computed_clientchal[0..8]);
                                     assert_eq!(u64::from_le_bytes(computed_clientchal_copy), received_clientchal);
 
-                                    let mut hmac_key             = [0u8;   20];
-                                    let mut client_to_server_key = [0u8; 0x10];
-                                    let mut server_to_client_key = [0u8; 0x10];
-                                    hmac_key.copy_from_slice(&bddata[20..40]);
+                                    let mut client_to_server_hmac = [0u8;   20];
+                                    let mut server_to_client_hmac = [0u8;   20];
+                                    let mut client_to_server_key  = [0u8; 0x10];
+                                    let mut server_to_client_key  = [0u8; 0x10];
+                                    client_to_server_hmac.copy_from_slice(&bddata[0..20]);
+                                    server_to_client_hmac.copy_from_slice(&bddata[20..40]);
                                     client_to_server_key.copy_from_slice(&bddata[40..56]);
                                     server_to_client_key.copy_from_slice(&bddata[56..72]);
+                                    session.set_client_to_server_hmac(&client_to_server_hmac);
+                                    session.set_server_to_client_hmac(&server_to_client_hmac);
                                     session.set_client_to_server_key(&client_to_server_key);
                                     session.set_server_to_client_key(&server_to_client_key);
 
@@ -298,6 +302,26 @@ impl BdSocket {
 
                                     let mut hash = [0u8; 0x08];
                                     hash.copy_from_slice(&msg[0x16+enc_size..msg.len()]);
+
+                                    let mut data_to_hash = vec![0u8; msg.len()+4-8];
+                                    let data_to_hash_len = data_to_hash.len();
+                                    data_to_hash[0..4].copy_from_slice(&u32::to_le_bytes(msg.len() as u32));
+                                    data_to_hash[4..].copy_from_slice(&msg[0..msg.len()-8]);
+
+                                    let mut hmac_algo = HmacSha1::new_from_slice(session.client_to_server_hmac()).unwrap();
+                                    hmac_algo.update(&data_to_hash);
+                                    let computed_hash = hmac_algo.finalize().into_bytes();
+
+                                    ensure!(hash[0] == computed_hash[0]
+                                         || hash[1] == computed_hash[1]
+                                         || hash[2] == computed_hash[2]
+                                         || hash[3] == computed_hash[3]
+                                         || hash[4] == computed_hash[4]
+                                         || hash[5] == computed_hash[5]
+                                         || hash[6] == computed_hash[6]
+                                         || hash[7] == computed_hash[7],
+                                        InvalidHmacSnafu {
+                                    }); 
 
                                     let decrypted = Aes128CbcDec::new_from_slices(session.client_to_server_key(), &iv)?
                                         .decrypt_padded::<NoPadding>(&mut encrypted).unwrap();

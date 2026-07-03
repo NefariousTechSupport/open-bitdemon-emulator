@@ -22,6 +22,8 @@ pub struct BdSession {
     server_random: u64,
     client_to_server_key: [u8; 0x10],
     server_to_client_key: [u8; 0x10],
+    client_to_server_hmac: [u8; 0x14],
+    server_to_client_hmac: [u8; 0x14],
 }
 
 impl io::Read for BdSession {
@@ -54,6 +56,8 @@ impl BdSession {
             server_random: 0,
             client_to_server_key: [0u8; 0x10],
             server_to_client_key: [0u8; 0x10],
+            client_to_server_hmac: [0u8; 0x14],
+            server_to_client_hmac: [0u8; 0x14],
         }
     }
 
@@ -116,5 +120,21 @@ impl BdSession {
 
     pub fn set_server_to_client_key(&mut self, server_to_client_key: &[u8; 0x10]) {
         self.server_to_client_key.copy_from_slice(server_to_client_key);
+    }
+
+    pub fn client_to_server_hmac(&self) -> &[u8; 0x14] {
+        &self.client_to_server_hmac
+    }
+
+    pub fn set_client_to_server_hmac(&mut self, hmac_key: &[u8; 0x14]) {
+        self.client_to_server_hmac.copy_from_slice(hmac_key);
+    }
+
+    pub fn server_to_client_hmac(&self) -> &[u8; 0x14] {
+        &self.server_to_client_hmac
+    }
+
+    pub fn set_server_to_client_hmac(&mut self, hmac_key: &[u8; 0x14]) {
+        self.server_to_client_hmac.copy_from_slice(hmac_key);
     }
 }
