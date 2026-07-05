@@ -71,11 +71,10 @@ impl BdResponse {
         else {
             let iv: [u8; 0x10] = rand::random();
 
-            let padded_len = (5 + self.data.len() + 0x0F) & !0x0F;
+            let padded_len = (4 + self.data.len() + 0x0F) & !0x0F;
             let mut padded_data = vec![0u8; padded_len];
             padded_data[0..4].copy_from_slice(&u32::to_le_bytes(self.data.len() as u32));
-            padded_data[4] = 5;
-            padded_data[5..self.data.len()+5].copy_from_slice(&self.data);
+            padded_data[4..self.data.len()+4].copy_from_slice(&self.data);
             let encrypted = Aes128CbcEnc::new_from_slices(session.server_to_client_key(), &iv)?
                 .encrypt_padded::<NoPadding>(&mut padded_data, padded_len).unwrap();
 
