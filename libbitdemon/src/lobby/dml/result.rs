@@ -19,6 +19,8 @@ pub struct DmlHierarchicalInfoResult {
     pub tier1: u32,
     pub tier2: u32,
     pub tier3: u32,
+    // Dw210 only
+    pub tier4: u32,
 }
 
 impl BdSerialize for DmlInfoResult {
@@ -43,6 +45,7 @@ impl BdSerialize for DmlHierarchicalInfoResult {
         writer.write_u32(self.tier1)?;
         writer.write_u32(self.tier2)?;
         writer.write_u32(self.tier3)?;
+        writer.write_u32(self.tier4)?;
 
         Ok(())
     }

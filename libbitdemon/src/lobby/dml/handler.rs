@@ -85,6 +85,7 @@ impl DmlHandler {
             tier1: 0,
             tier2: 0,
             tier3: 0,
+            tier4: 0,
         };
 
         TaskReply::with_results(
