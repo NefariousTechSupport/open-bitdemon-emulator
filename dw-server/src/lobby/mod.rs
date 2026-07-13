@@ -1,6 +1,7 @@
 ﻿mod content_streaming;
 mod counter;
 mod group;
+mod matchmaking2;
 mod profile;
 mod rich_presence;
 mod storage;
@@ -9,6 +10,7 @@ use crate::config::DwServerConfig;
 use crate::lobby::content_streaming::create_content_streaming_handler;
 use crate::lobby::counter::create_counter_handler;
 use crate::lobby::group::create_group_handler;
+use crate::lobby::matchmaking2::create_matchmaking2_handler;
 use crate::lobby::profile::create_profile_handler;
 use crate::lobby::rich_presence::create_rich_presence_handler;
 use crate::lobby::storage::create_storage_handler;
@@ -24,8 +26,7 @@ use bitdemon::lobby::twitch::TwitchHandler;
 use bitdemon::lobby::vote_rank::VoteRankHandler;
 use bitdemon::lobby::youtube::YoutubeHandler;
 use bitdemon::lobby::LobbyServiceId::{
-    Anticheat, BandwidthTest, Counter, Dml, EventLog, Group, KeyArchive, League, Profile,
-    RichPresence, Storage, TitleUtilities, Twitch, VoteRank, Youtube,
+    Anticheat, BandwidthTest, Counter, Dml, EventLog, Group, KeyArchive, League, Matchmaking2, Profile, RichPresence, Storage, TitleUtilities, Twitch, VoteRank, Youtube,
 };
 use bitdemon::lobby::{LobbyServer, LobbyServiceId, ThreadSafeLobbyHandler};
 use bitdemon::networking::session_manager::SessionManager;
@@ -50,6 +51,7 @@ pub fn configure_lobby_server(
     configurer.direct_config(Group, create_group_handler(session_manager.clone()));
     configurer.direct_config(KeyArchive, Arc::new(KeyArchiveHandler::new()));
     configurer.direct_config(League, Arc::new(LeagueHandler::new()));
+    configurer.direct_config(Matchmaking2, create_matchmaking2_handler(session_manager.clone()));
     configurer.direct_config(Profile, create_profile_handler());
     configurer.direct_config(RichPresence, create_rich_presence_handler(session_manager));
     configurer.direct_config(Storage, create_storage_handler());

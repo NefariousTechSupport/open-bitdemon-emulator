@@ -7,6 +7,7 @@ pub mod event_log;
 pub mod group;
 pub mod key_archive;
 pub mod league;
+pub mod matchmaking2;
 mod lsg;
 pub mod profile;
 mod response;
@@ -72,6 +73,7 @@ pub enum LobbyServiceId {
     RichPresence = 68,
     League = 81,
     League2 = 82,
+    Matchmaking2 = 138,
     // Services with unknown IDs:
     // UCD
     // - IsRegistered
