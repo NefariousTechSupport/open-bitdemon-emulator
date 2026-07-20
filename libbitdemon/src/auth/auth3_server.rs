@@ -8,13 +8,8 @@ use serde::Serialize;
 use serde::Serializer;
 use serde_aux::prelude::deserialize_number_from_string;
 use snafu::Snafu;
+use crate::auth::auth_handler::AuthMessageType::CreateAccountRequest;
 
-use crate::auth::auth_handler::AuthMessageType::{self, CreateAccountRequest};
-use crate::auth::result::auth_ticket::AuthTicket;
-use crate::auth::result::auth_ticket::BdAuthTicketType::UserToService;
-use crate::domain::title::Title::SuperNovaPS3;
-use crate::messaging::bd_serialization::BdSerialize;
-use crate::messaging::bd_writer::BdWriter;
 
 pub fn serialize_u32_to_string<S>(field: &u32, serializer: S) -> Result<S::Ok, S::Error> where S : Serializer {
     serializer.serialize_str(field.to_string().as_str())
@@ -22,17 +17,9 @@ pub fn serialize_u32_to_string<S>(field: &u32, serializer: S) -> Result<S::Ok, S
 pub fn serialize_u64_to_string<S>(field: &u64, serializer: S) -> Result<S::Ok, S::Error> where S : Serializer {
     serializer.serialize_str(field.to_string().as_str())
 }
-pub fn serialize_auth_ticket<S>(field: &AuthTicket, serializer: S) -> Result<S::Ok, S::Error> where S : Serializer {
-    let mut ticket_buf = Vec::new();
-    {
-        let mut ticket_writer = BdWriter::new(&mut ticket_buf);
-        let _ = field.serialize(&mut ticket_writer);
-
-    }
-
-    println!("auth ticket size is {}", ticket_buf.len());
+pub fn serialize_auth_ticket_b64<S>(field: &Vec<u8>, serializer: S) -> Result<S::Ok, S::Error> where S : Serializer {
     // It must be exactly 0xCC bytes long excluding the null byte
-    let mut ticket_base64: String = base64_encoder.encode(ticket_buf);
+    let mut ticket_base64: String = base64_encoder.encode(field);
     ticket_base64.reserve(0xCC - ticket_base64.len());
     for _ in ticket_base64.len()..0xCC {
         ticket_base64 += "=";
@@ -60,10 +47,10 @@ pub struct Auth3Response {
     pub code: u32,
     #[serde(serialize_with = "serialize_u64_to_string")]
     pub iv_seed: u64,
-    #[serde(serialize_with = "serialize_auth_ticket")]
-    pub client_ticket: AuthTicket,
-    #[serde(serialize_with = "serialize_auth_ticket")]
-    pub server_ticket: AuthTicket,
+    #[serde(serialize_with = "serialize_auth_ticket_b64")]
+    pub client_ticket: Vec<u8>,
+    #[serde(serialize_with = "serialize_auth_ticket_b64")]
+    pub server_ticket: Vec<u8>,
     pub client_id: String,
     pub account_type: String,
     pub crossplay_enabled: bool,
@@ -78,8 +65,8 @@ impl Default for Auth3Response {
             auth_task: CreateAccountRequest.to_u64().unwrap(),
             code: 0,
             iv_seed: 0,
-            client_ticket: AuthTicket { ticket_type: UserToService, title: SuperNovaPS3, time_issued: 0, time_expires: 0, license_id: 0, user_id: 0, username: String::new(), session_key: [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ] },
-            server_ticket: AuthTicket { ticket_type: UserToService, title: SuperNovaPS3, time_issued: 0, time_expires: 0, license_id: 0, user_id: 0, username: String::new(), session_key: [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ] },
+            client_ticket: Vec::new(),
+            server_ticket: Vec::new(),
             client_id: String::new(),
             account_type: String::new(),
             crossplay_enabled: false,

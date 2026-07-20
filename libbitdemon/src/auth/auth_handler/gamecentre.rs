@@ -12,6 +12,7 @@ use crate::auth::result::auth_ticket::{AuthTicket, BdAuthTicketType};
 use crate::crypto::generate_iv_seed;
 use crate::domain::title::Title;
 use crate::messaging::bd_message::BdMessage;
+use crate::messaging::bd_serialization::BdSerialize;
 use crate::messaging::bd_writer::BdWriter;
 use crate::messaging::BdErrorCode;
 use crate::networking::bd_session::BdSession;
@@ -95,16 +96,38 @@ impl AuthHandler for GameCentreAuthHandler {
             let expires_i64 = now.timestamp() + TICKET_ISSUE_LENGTH;
             let expires = ((expires_i64) % (u32::MAX as i64)) as u32;
 
-            let ticket = AuthTicket {
+            let client_ticket = AuthTicket {
                 ticket_type: BdAuthTicketType::UserToService,
                 title: title,
                 time_issued: issued,
                 time_expires: expires,
                 license_id: 1234u64, // test data
                 user_id: user_id,
-                username: gc_auth_request.game_center_display_name,
+                username: gc_auth_request.game_center_display_name.clone(),
                 session_key: [0x42; 24], // test data
             };
+
+            let server_ticket = AuthTicket {
+                ticket_type: BdAuthTicketType::UserToService,
+                title: title,
+                time_issued: issued,
+                time_expires: expires,
+                license_id: 1234u64, // test data
+                user_id: user_id,
+                username: gc_auth_request.game_center_display_name.clone(),
+                session_key: [0x42; 24], // test data
+            };
+
+            let mut client_ticket_buf = Vec::new();
+            {
+                let mut ticket_writer = BdWriter::new(&mut client_ticket_buf);
+                client_ticket.serialize(&mut ticket_writer);
+            }
+            let mut server_ticket_buf = Vec::new();
+            {
+                let mut ticket_writer = BdWriter::new(&mut server_ticket_buf);
+                server_ticket.serialize(&mut ticket_writer);
+            }
 
             // TODO: Verify the signature provided by the client
             // Read the discussion on the following https://developer.apple.com/documentation/gamekit/gklocalplayer/fetchitems(foridentityverificationsignature:)
@@ -112,8 +135,8 @@ impl AuthHandler for GameCentreAuthHandler {
             response.code = 700;
             response.auth_task = GameCentreForMmpReply.to_u64().unwrap();
             response.iv_seed = generate_iv_seed().to_u64().unwrap();
-            response.client_ticket = ticket;
-            //response.server_ticket = ;
+            response.client_ticket = client_ticket_buf;
+            response.server_ticket = server_ticket_buf;
             response.client_id = gc_auth_request.game_center_id;
             response.account_type = String::from("gamecentre"); // unconfirmed
             response.crossplay_enabled = false;
