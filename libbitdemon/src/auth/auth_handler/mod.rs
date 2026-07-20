@@ -87,3 +87,4 @@ pub trait AuthHandler {
 mod authentication_request;
 pub mod steam;
 pub mod gamecentre;
+pub mod rpcn;

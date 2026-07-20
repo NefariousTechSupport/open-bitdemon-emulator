@@ -1,4 +1,5 @@
 use crate::auth::auth_handler::gamecentre::GameCentreAuthHandler;
+use crate::auth::auth_handler::rpcn::RPCNAuthHandler;
 use crate::auth::auth_handler::steam::SteamAuthHandler;
 use crate::auth::auth_handler::AuthMessageType;
 use crate::auth::auth_handler::ThreadSafeAuthHandler;
@@ -40,6 +41,11 @@ impl AuthServer {
         auth_server.add_handler(
             AuthMessageType::GameCentreForMmpRequest,
             Arc::new(GameCentreAuthHandler::new(key_store.clone())),
+        );
+
+        auth_server.add_handler(
+            AuthMessageType::Ps3ForMmpRequest,
+            Arc::new(RPCNAuthHandler::new()),
         );
 
         auth_server
