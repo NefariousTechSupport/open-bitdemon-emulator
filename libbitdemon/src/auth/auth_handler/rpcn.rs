@@ -121,6 +121,7 @@ impl AuthHandler for RPCNAuthHandler {
             encrypt_buffer_in_place(&mut client_ticket_buf, &client_cookie, &auth_iv);
 
             let extra_data = Auth3RPCNReply {
+                // this is meant to be a JWE, I'm not sure what for
                 extended_data: String::from("eyJlbmMiOiAiQTEyOENCQy1IUzI1NiIsICJhbGciOiAiUlNBLU9BRVAifQ.eyJlbmMiOiAiQTEyOENCQy1IUzI1NiIsICJhbGciOiAiUlNBLU9BRVAifQ.eyJlbmMiOiAiQTEyOENCQy1IUzI1NiIsICJhbGciOiAiUlNBLU9BRVAifQ.eyJlbmMiOiAiQTEyOENCQy1IUzI1NiIsICJhbGciOiAiUlNBLU9BRVAifQ.eyJlbmMiOiAiQTEyOENCQy1IUzI1NiIsICJhbGciOiAiUlNBLU9BRVAifQ")
             };
 
